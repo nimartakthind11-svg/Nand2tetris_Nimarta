@@ -1,3 +1,5 @@
+**** PROJECT 1 ****
+
 // AND 
 
 CHIP And {
@@ -239,4 +241,33 @@ CHIP DMux8Way {
     DMux(in=in, sel=sel[2], a=abcd, b=efgh);
     DMux4Way(in=abcd, sel=sel[0..1], a=a, b=b, c=c, d=d);
     DMux4Way(in=efgh, sel=sel[0..1], a=e, b=f, c=g, d=h);
+}
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+**** PROJECT 2 ****
+
+// Half Adder 
+
+CHIP HalfAdder {
+    IN a, b;   
+    OUT sum, carry; 
+
+    PARTS:
+    Xor(a=a , b=b , out=sum );
+    And(a=a , b=b , out=carry );
+}
+
+// Full Adder 
+
+CHIP FullAdder {
+    IN a, b, c; 
+    OUT sum, carry;
+
+    PARTS:
+    Xor(a=a , b=b , out=x );
+    Xor(a=x , b=c , out=sum );
+    And(a=a , b=b , out=y );
+    And(a=x , b=c , out=z );
+    Or(a=y , b=z , out=carry );
 }
