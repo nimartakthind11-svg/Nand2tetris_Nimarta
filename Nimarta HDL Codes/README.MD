@@ -296,3 +296,49 @@ CHIP Add16 {
     FullAdder(a=a[14], b=b[14], c=c14, sum=out[14], carry=c15);
     FullAdder(a=a[15], b=b[15], c=c15, sum=out[15], carry=c16);
 }
+
+// ALU 
+CHIP ALU {
+    IN  
+        x[16], y[16],  // 16-bit inputs        
+        zx, // zero the x input?
+        nx, // negate the x input?
+        zy, // zero the y input?
+        ny, // negate the y input?
+        f,  // compute (out = x + y) or (out = x & y)?
+        no; // negate the out output?
+    OUT 
+        out[16], // 16-bit output
+        zr,      // if (out == 0) equals 1, else 0
+        ng;      // if (out < 0)  equals 1, else 0
+
+    PARTS:
+    // x zero / negate
+    Mux16(a=x, sel=zx, out=x1);
+    Not16(in=x1, out=notX);
+    Mux16(a=x1, b=notX, sel=nx, out=x2);
+
+    // y zero / negate
+    Mux16(a=y, sel=zy, out=y1);
+    Not16(in=y1, out=notY);
+    Mux16(a=y1, b=notY, sel=ny, out=y2);
+
+    // x + y OR x & y
+    Add16(a=x2, b=y2, out=added);
+    And16(a=x2, b=y2, out=xyAnd);
+    Mux16(a=xyAnd, b=added, sel=f, out=result);
+
+    // negate the output?
+    Not16(in=result, out=notofResult);
+    Mux16(a=result, b=notofResult, sel=no, out=out, out[15]=firstOut, out[0..7]=finalLeft, out[8..15]=finalRight);
+
+    // output == 0 (zr)
+    Or8Way(in=finalLeft, out=zrl);
+    Or8Way(in=finalRight, out=zrr);
+    Or(a=zrl, b=zrr, out=nzr);
+    Not(in=nzr, out=zr);
+
+    // output < 0 (ng)
+    And(a=firstOut, b=true, out=ng);
+}
+
