@@ -295,9 +295,10 @@ CHIP Add16 {
     FullAdder(a=a[13], b=b[13], c=c13, sum=out[13], carry=c14);
     FullAdder(a=a[14], b=b[14], c=c14, sum=out[14], carry=c15);
     FullAdder(a=a[15], b=b[15], c=c15, sum=out[15], carry=c16);
-}
 
-// ALU 
+
+// ALU
+
 CHIP ALU {
     IN  
         x[16], y[16],  // 16-bit inputs        
@@ -313,32 +314,31 @@ CHIP ALU {
         ng;      // if (out < 0)  equals 1, else 0
 
     PARTS:
-    // x zero / negate
-    Mux16(a=x, sel=zx, out=x1);
-    Not16(in=x1, out=notX);
-    Mux16(a=x1, b=notX, sel=nx, out=x2);
+    // Step 1: Handle zx and nx (zero/negate x)
+    Mux16(a=x, b=false, sel=zx, out=x1);
+    Not16(in=x1, out=nx1);
+    Mux16(a=x1, b=nx1, sel=nx, out=x2);
 
-    // y zero / negate
-    Mux16(a=y, sel=zy, out=y1);
-    Not16(in=y1, out=notY);
-    Mux16(a=y1, b=notY, sel=ny, out=y2);
+    // Step 2: Handle zy and ny (zero/negate y)
+    Mux16(a=y, b=false, sel=zy, out=y1);
+    Not16(in=y1, out=ny1);
+    Mux16(a=y1, b=ny1, sel=ny, out=y2);
 
-    // x + y OR x & y
-    Add16(a=x2, b=y2, out=added);
-    And16(a=x2, b=y2, out=xyAnd);
-    Mux16(a=xyAnd, b=added, sel=f, out=result);
+    // Step 3: f — AND or ADD
+    And16(a=x2, b=y2, out=fAnd);
+    Add16(a=x2, b=y2, out=fAdd);
+    Mux16(a=fAnd, b=fAdd, sel=f, out=fOut);
 
-    // negate the output?
-    Not16(in=result, out=notofResult);
-    Mux16(a=result, b=notofResult, sel=no, out=out, out[15]=firstOut, out[0..7]=finalLeft, out[8..15]=finalRight);
+    // Step 4
+    Not16(in=fOut, out=nfOut);
+    Mux16(a=fOut, b=nfOut, sel=no, out=out, out[0..7]=low8, out[8..15]=high8, out[15]=ng);
 
-    // output == 0 (zr)
-    Or8Way(in=finalLeft, out=zrl);
-    Or8Way(in=finalRight, out=zrr);
-    Or(a=zrl, b=zrr, out=nzr);
-    Not(in=nzr, out=zr);
+    // Step 5
+    Or8Way(in=low8, out=orLow);
+    Or8Way(in=high8, out=orHigh);
+    Or(a=orLow, b=orHigh, out=notZero);
+    Not(in=notZero, out=zr);
 
-    // output < 0 (ng)
-    And(a=firstOut, b=true, out=ng);
 }
+
 
