@@ -433,6 +433,103 @@ CHIP RAM64 {
         sel=address[3..5], out=out);
 }
 
+//RAM512
+
+CHIP RAM512 {
+    IN in[16], load, address[9];
+    OUT out[16];
+
+    PARTS:
+    DMux8Way(in=load, sel=address[6..8],
+        a=load0, b=load1, c=load2, d=load3,
+        e=load4, f=load5, g=load6, h=load7);
+
+    RAM64(in=in, load=load0, address=address[0..5], out=out0);
+    RAM64(in=in, load=load1, address=address[0..5], out=out1);
+    RAM64(in=in, load=load2, address=address[0..5], out=out2);
+    RAM64(in=in, load=load3, address=address[0..5], out=out3);
+    RAM64(in=in, load=load4, address=address[0..5], out=out4);
+    RAM64(in=in, load=load5, address=address[0..5], out=out5);
+    RAM64(in=in, load=load6, address=address[0..5], out=out6);
+    RAM64(in=in, load=load7, address=address[0..5], out=out7);
+
+    Mux8Way16(a=out0, b=out1, c=out2, d=out3,
+        e=out4, f=out5, g=out6, h=out7,
+        sel=address[6..8], out=out);
+}
+
+//RAM4K
+
+CHIP RAM4K {
+    IN in[16], load, address[12];
+    OUT out[16];
+
+    PARTS:
+    DMux8Way(in=load, sel=address[9..11],
+        a=load0, b=load1, c=load2, d=load3,
+        e=load4, f=load5, g=load6, h=load7);
+
+    RAM512(in=in, load=load0, address=address[0..8], out=out0);
+    RAM512(in=in, load=load1, address=address[0..8], out=out1);
+    RAM512(in=in, load=load2, address=address[0..8], out=out2);
+    RAM512(in=in, load=load3, address=address[0..8], out=out3);
+    RAM512(in=in, load=load4, address=address[0..8], out=out4);
+    RAM512(in=in, load=load5, address=address[0..8], out=out5);
+    RAM512(in=in, load=load6, address=address[0..8], out=out6);
+    RAM512(in=in, load=load7, address=address[0..8], out=out7);
+
+    Mux8Way16(a=out0, b=out1, c=out2, d=out3,
+        e=out4, f=out5, g=out6, h=out7,
+        sel=address[9..11], out=out);
+}
+
+//RAM16K
+
+CHIP RAM16K {
+    IN in[16], load, address[14];
+    OUT out[16];
+
+    PARTS:
+    DMux4Way(in=load, sel=address[12..13],
+        a=load0, b=load1, c=load2, d=load3);
+
+    RAM4K(in=in, load=load0, address=address[0..11], out=out0);
+    RAM4K(in=in, load=load1, address=address[0..11], out=out1);
+    RAM4K(in=in, load=load2, address=address[0..11], out=out2);
+    RAM4K(in=in, load=load3, address=address[0..11], out=out3);
+
+    Mux4Way16(a=out0, b=out1, c=out2, d=out3,
+        sel=address[12..13], out=out);
+}
+
+//PC
+
+CHIP PC {
+    IN in[16], load, inc, reset;
+    OUT out[16];
+
+    PARTS:
+    // Increment current PC value
+    Inc16(in=pcOut, out=incOut);
+
+    // If inc=1, select incremented value
+    Mux16(a=pcOut, b=incOut, sel=inc, out=incMux);
+
+    // If load=1, select input
+    Mux16(a=incMux, b=in, sel=load, out=loadMux);
+
+    // If reset=1, select 0
+    Mux16(a=loadMux, b=false, sel=reset, out=resetMux);
+
+    // Store the new PC value
+    Register(in=resetMux, load=true, out=pcOut);
+
+    // Send internal PC value to output
+    // Can't directly connect pcOut to out with a chip,
+    // so use a buffer:
+    Mux16(a=pcOut, b=pcOut, sel=false, out=out);
+}
+
 
 
 
